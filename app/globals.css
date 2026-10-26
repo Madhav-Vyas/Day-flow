@@ -1,26 +1,27 @@
 @import "tailwindcss";
 
+/* 1. Register dark variant for class-based toggling (.dark class on <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 2. Light Theme Variables (Default) */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #09090b;
+}
+
+/* 3. Dark Theme Variables */
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-doto), var(--font-rajdhani), sans-serif;
 }
