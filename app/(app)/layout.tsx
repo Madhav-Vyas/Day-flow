@@ -7,7 +7,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Suspense fallback={<aside className="w-64 shrink-0 h-screen border-r border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950" />}>
         <Sidebar />
       </Suspense>
-      <main className="flex-1 min-w-0 overflow-y-auto p-6 md:p-8">
+      <main className="flex-1 min-w-0 overflow-y-auto flex flex-col">
         {children}
       </main>
     </div>
