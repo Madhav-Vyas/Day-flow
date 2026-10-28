@@ -1,42 +1,50 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   formatDateForUrl,
   addDays,
   addWeeks,
   formatWeekRange,
-} from "@/app/lib/dateUtils";
+} from "@/lib/dateUtils";
 
-import { Task, DayInfo, DayStats } from "./components/types";
+import { Task, DayInfo, CreateTaskInput } from "./components/types";
 import {
-  INITIAL_TASKS,
   DAY_NAMES,
-  TARGET_CAPACITY_PER_DAY,
   TARGET_SPRINT_HOURS,
 } from "./components/mockData";
+import { useWeeklyPlanStore } from "@/lib/stores/weeklyPlanStore";
+
 import { TopAppBar } from "./components/TopAppBar";
 import { WeekHeader } from "./components/WeekHeader";
-import { CapacityBanner } from "./components/CapacityBanner";
 import { DayColumn } from "./components/DayColumn";
 import { BacklogSection } from "./components/BacklogSection";
 import { NewTaskModal } from "./components/NewTaskModal";
 import { LogTimeModal } from "./components/LogTimeModal";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createTask, getWeekTasks } from "@/lib/services/task-service";
 
 interface WeeklyPlanViewProps {
   initialMondayDate: string; // "YYYY-MM-DD"
 }
 
 export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
-  const [isWarningDismissed, setIsWarningDismissed] = useState(false);
-  const [isBacklogExpanded, setIsBacklogExpanded] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
-  const [isLogTimeModalOpen, setIsLogTimeModalOpen] = useState(false);
-  const [targetColumnForNewTask, setTargetColumnForNewTask] = useState<number>(2);
+  // Client UI state via Zustand
+  const queryClient = useQueryClient();
+  const {
+    searchQuery,
+    setSearchQuery,
+    isNewTaskModalOpen,
+    setIsNewTaskModalOpen,
+    targetDayIndex,
+    setTargetDayIndex,
+    isBacklogExpanded,
+    toggleBacklogExpanded,
+  } = useWeeklyPlanStore();
 
-  // Parse current week dates
+  const [isLogTimeModalOpen, setIsLogTimeModalOpen] = useState(false);
+
+  // Parse current week dates (Monday to Friday: 0 = Mon, 1 = Tue, 2 = Wed, 3 = Thu, 4 = Fri)
   const mondayDate = useMemo(() => {
     const parts = initialMondayDate.split("-").map(Number);
     return new Date(parts[0], parts[1] - 1, parts[2]);
@@ -55,136 +63,92 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
     });
   }, [mondayDate]);
 
-  // Check if today is in this week
+  // Check if today falls in this week
   const todayIndex = useMemo(() => {
     const today = new Date();
     const todayStr = formatDateForUrl(today);
     return daysInfo.findIndex((d) => d.formatted === todayStr);
   }, [daysInfo]);
 
-  // Active "Today" indicator (default to Wednesday index 2 if outside current week)
   const activeTodayIndex = todayIndex !== -1 ? todayIndex : 2;
+
+  // Server state: Fetch tasks for current week
+  const { data: rawTasks = [] } = useQuery<Task[]>({
+    queryKey: ["tasks", initialMondayDate],
+    queryFn: () => getWeekTasks(initialMondayDate),
+  });
+
+  // Ensure tasks have consistent id and array shape
+  const tasks: Task[] = useMemo(() => {
+    const list = Array.isArray(rawTasks)
+      ? rawTasks
+      : (rawTasks as any)?.data ?? (rawTasks as any)?.tasks ?? [];
+    return list.map((t: any) => ({
+      ...t,
+      id: t.id || t._id,
+    }));
+  }, [rawTasks]);
 
   // Filter tasks based on live search
   const filteredTasks = useMemo(() => {
+    if (!Array.isArray(tasks)) return [];
     if (!searchQuery.trim()) return tasks;
-    const q = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase();
     return tasks.filter(
       (t) =>
-        t.title.toLowerCase().includes(q) ||
-        t.code.toLowerCase().includes(q) ||
-        t.tag.toLowerCase().includes(q)
+        t.title?.toLowerCase().includes(query) ||
+        t.category?.toLowerCase().includes(query) ||
+        t.code?.toLowerCase().includes(query) ||
+        t.description?.toLowerCase().includes(query)
     );
   }, [tasks, searchQuery]);
 
-  // Calculate day metrics
-  const dayStats: DayStats[] = useMemo(() => {
-    return Array.from({ length: 5 }, (_, i) => {
-      const dayTasks = tasks.filter((t) => t.dayIndex === i);
-      const totalHours = dayTasks.reduce((sum, t) => sum + t.hours, 0);
-      const isOver = totalHours > TARGET_CAPACITY_PER_DAY;
-      const isUnder = totalHours < TARGET_CAPACITY_PER_DAY;
-      const diff = totalHours - TARGET_CAPACITY_PER_DAY;
-      const isDone = dayTasks.length > 0 && dayTasks.every((t) => t.status === "DONE");
-
-      let statusLabel = "Balanced";
-      if (i === activeTodayIndex) {
-        statusLabel = "Today";
-      } else if (i === 3) {
-        statusLabel = "Capacity";
-      } else if (i === 4) {
-        statusLabel = "Buffer";
-      }
-
-      return {
-        totalHours,
-        isOver,
-        isUnder,
-        diff,
-        isDone,
-        statusLabel,
-      };
-    });
-  }, [tasks, activeTodayIndex]);
-
   // Overall sprint capacity
   const totalPlannedHours = useMemo(() => {
-    return tasks
-      .filter((t) => t.dayIndex >= 0 && t.dayIndex < 5)
-      .reduce((sum, t) => sum + t.hours, 0);
-  }, [tasks]);
+    return filteredTasks
+      .filter((t) => Number(t.dayIndex) >= 0 && Number(t.dayIndex) < 5)
+      .reduce((sum, t) => sum + (t.estimatedHours ?? t.hours ?? 0), 0);
+  }, [filteredTasks]);
 
   const sprintPercentage = Math.min(
     Math.round((totalPlannedHours / TARGET_SPRINT_HOURS) * 100),
-    100
+    100,
   );
   const sprintBuffer = Math.max(0, TARGET_SPRINT_HOURS - totalPlannedHours);
-
-  // Actions
-  const handleRescheduleFE157 = () => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.code === "FE-157" ? { ...t, dayIndex: 3, quickAction: undefined } : t
-      )
-    );
-    setIsWarningDismissed(true);
-  };
-
-  const handlePlaceIntoFriday = () => {
-    setTasks((prev) =>
-      prev.map((t) => (t.code === "BUG-086" ? { ...t, dayIndex: 4 } : t))
-    );
-  };
-
-  const handleAddToPlan = (taskId: string) => {
-    let targetDay = 3;
-    const openDay = dayStats.findIndex((d) => d.totalHours < TARGET_CAPACITY_PER_DAY);
-    if (openDay !== -1) targetDay = openDay;
-
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, dayIndex: targetDay } : t))
-    );
-  };
-
-  const handleCycleStatus = (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== taskId) return t;
-        const nextStatus =
-          t.status === "TODO"
-            ? "IN_PROGRESS"
-            : t.status === "IN_PROGRESS"
-            ? "DONE"
-            : "TODO";
-        return { ...t, status: nextStatus };
-      })
-    );
-  };
-
-  const handleCreateTask = (taskData: Omit<Task, "id">) => {
-    const newTask: Task = {
-      ...taskData,
-      id: `t-${Date.now()}`,
-    };
-    setTasks((prev) => [...prev, newTask]);
-  };
-
-  const handleLogTime = (hours: number) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === "t-7"
-          ? { ...t, loggedHours: (t.loggedHours || 0) + hours }
-          : t
-      )
-    );
-  };
 
   // Week navigation URLs
   const prevWeekMonday = formatDateForUrl(addWeeks(mondayDate, -1));
   const nextWeekMonday = formatDateForUrl(addWeeks(mondayDate, 1));
   const weekRangeDisplay = formatWeekRange(mondayDate);
 
-  const backlogTasks = filteredTasks.filter((t) => t.dayIndex === -1);
+  // Backlog tasks (dayIndex === -1)
+  const backlogTasks = useMemo(() => {
+    return filteredTasks.filter((t) => Number(t.dayIndex) === -1);
+  }, [filteredTasks]);
+
+  // Handlers for TanStack Query mutations
+  const handleCycleStatus = (_taskId: string) => {
+    // Optional: Wire with task status update mutation
+  };
+
+  const createTaskMutation = useMutation({
+    mutationFn: createTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
+  const handleCreateTask = (taskData: CreateTaskInput) => {
+    createTaskMutation.mutate(taskData);
+  };
+
+  const handleLogTime = (_hours: number) => {
+    // Optional: Wire with log time mutation
+  };
+
+  const handleAddToPlan = (_taskId: string) => {
+    // Optional: Wire with add to plan mutation
+  };
 
   return (
     <div className="flex flex-col flex-1 min-h-screen bg-[#F8FAFC] dark:bg-zinc-950 font-sans text-slate-900 dark:text-zinc-100 transition-colors">
@@ -194,7 +158,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
         onSearchChange={setSearchQuery}
         onOpenLogTime={() => setIsLogTimeModalOpen(true)}
         onOpenNewTask={() => {
-          setTargetColumnForNewTask(activeTodayIndex);
+          setTargetDayIndex(activeTodayIndex);
           setIsNewTaskModalOpen(true);
         }}
         totalPlannedHours={totalPlannedHours}
@@ -210,53 +174,47 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
           targetSprintHours={TARGET_SPRINT_HOURS}
           sprintPercentage={sprintPercentage}
           sprintBuffer={sprintBuffer}
-          onDuplicateLastWeek={() =>
-            alert("Previous week tasks duplicated into plan.")
-          }
+          onDuplicateLastWeek={() => {}}
           onOpenNewTask={() => {
-            setTargetColumnForNewTask(activeTodayIndex);
+            setTargetDayIndex(activeTodayIndex);
             setIsNewTaskModalOpen(true);
           }}
         />
 
-        {/* 3. CAPACITY OVERLOAD WARNING BANNER */}
-        <CapacityBanner
-          isDismissed={isWarningDismissed}
-          onDismiss={() => setIsWarningDismissed(true)}
-          onReschedule={handleRescheduleFE157}
-        />
-
-        {/* 4. 5-DAY WEEKLY GRID */}
+        {/* 3. 5-DAY WEEKLY GRID (0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
-          {daysInfo.map((day) => (
-            <DayColumn
-              key={day.index}
-              day={day}
-              stats={dayStats[day.index]}
-              tasks={filteredTasks.filter((t) => t.dayIndex === day.index)}
-              isToday={day.index === activeTodayIndex}
-              onCycleStatus={handleCycleStatus}
-              onLogTime={() => setIsLogTimeModalOpen(true)}
-              onRescheduleFE157={handleRescheduleFE157}
-              onOpenSlotClick={(dayIdx) => {
-                setTargetColumnForNewTask(dayIdx);
-                setIsNewTaskModalOpen(true);
-              }}
-            />
-          ))}
+          {daysInfo.map((day) => {
+            const dayTasks = filteredTasks.filter(
+              (t) => Number(t.dayIndex) === day.index
+            );
+            return (
+              <DayColumn
+                key={day.index}
+                day={day}
+                tasks={dayTasks}
+                isToday={day.index === activeTodayIndex}
+                onCycleStatus={handleCycleStatus}
+                onLogTime={() => setIsLogTimeModalOpen(true)}
+                onAddTask={(dayIdx) => {
+                  setTargetDayIndex(dayIdx);
+                  setIsNewTaskModalOpen(true);
+                }}
+              />
+            );
+          })}
         </div>
 
-        {/* 5. UNSCHEDULED & BACKLOG CARRY-OVER */}
+        {/* 4. UNSCHEDULED & BACKLOG CARRY-OVER */}
         <BacklogSection
           tasks={backlogTasks}
           isExpanded={isBacklogExpanded}
-          onToggleExpanded={() => setIsBacklogExpanded(!isBacklogExpanded)}
+          onToggleExpanded={toggleBacklogExpanded}
           onOpenNewBacklogItem={() => {
-            setTargetColumnForNewTask(-1);
+            setTargetDayIndex(-1);
             setIsNewTaskModalOpen(true);
           }}
           onAddToPlan={handleAddToPlan}
-          onPlaceIntoFriday={handlePlaceIntoFriday}
+          onPlaceIntoFriday={() => {}}
         />
       </div>
 
@@ -264,8 +222,9 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
       <NewTaskModal
         isOpen={isNewTaskModalOpen}
         onClose={() => setIsNewTaskModalOpen(false)}
-        defaultDayIndex={targetColumnForNewTask}
+        defaultDayIndex={targetDayIndex}
         onCreateTask={handleCreateTask}
+        daysInfo={daysInfo}
       />
 
       <LogTimeModal

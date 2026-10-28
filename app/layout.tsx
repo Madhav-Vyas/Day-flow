@@ -3,6 +3,8 @@ import "./globals.css";
 import { Doto, Rajdhani } from "next/font/google";
 import { ThemeProvider } from "./components/ThemeProvider";
 
+import QueryProvider from "./providers/query-provider";
+
 const doto = Doto({
   variable: "--font-doto",
   subsets: ["latin"],
@@ -38,7 +40,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <QueryProvider>{children}</QueryProvider>
         </ThemeProvider>
       </body>
     </html>

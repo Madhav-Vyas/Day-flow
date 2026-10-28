@@ -60,34 +60,37 @@ export function BacklogSection({
       {/* Backlog Items Grid */}
       {isExpanded && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-4">
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              className="flex flex-col justify-between rounded-xl border border-zinc-200/80 bg-slate-50/50 p-4 shadow-2xs hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 transition-all"
-            >
-              <div>
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-zinc-400">
-                  <span>{task.code}</span>
-                  <span>{task.hours.toFixed(1)}h</span>
+          {tasks.map((task) => {
+            const taskId = task.id || task._id || "";
+            return (
+              <div
+                key={taskId}
+                className="flex flex-col justify-between rounded-xl border border-zinc-200/80 bg-slate-50/50 p-4 shadow-2xs hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 transition-all"
+              >
+                <div>
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-zinc-400">
+                    <span>{task.code || "TASK"}</span>
+                    <span>{(task.estimatedHours ?? task.hours ?? 0).toFixed(1)}h</span>
+                  </div>
+                  <p className="my-2.5 text-xs font-medium leading-relaxed text-slate-800 dark:text-zinc-200">
+                    {task.title}
+                  </p>
                 </div>
-                <p className="my-2.5 text-xs font-medium leading-relaxed text-slate-800 dark:text-zinc-200">
-                  {task.title}
-                </p>
+                <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                  <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-zinc-800 dark:text-zinc-300">
+                    {task.priority || "P3 Low"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onAddToPlan(taskId)}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 cursor-pointer"
+                  >
+                    + Add to plan
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-zinc-800 dark:text-zinc-300">
-                  {task.priority || "P3 Low"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onAddToPlan(task.id)}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 cursor-pointer"
-                >
-                  + Add to plan
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Capacity Advice Card */}
           <div className="flex flex-col justify-between rounded-xl border border-blue-200/70 bg-gradient-to-br from-blue-50/50 to-indigo-50/30 p-4 shadow-2xs dark:border-blue-900/50 dark:from-blue-950/20 dark:to-indigo-950/10">

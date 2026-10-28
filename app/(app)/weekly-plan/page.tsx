@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { formatDateForUrl, getStartOfWeek } from "@/app/lib/dateUtils";
+import { formatDateForUrl, getStartOfWeek } from "@/lib/dateUtils";
 import { redirect } from "next/navigation";
 import { WeeklyPlanView } from "./WeeklyPlanView";
 
@@ -47,6 +47,3 @@ export default function WeeklyPlan({
     </Suspense>
   );
 }
-
-
-

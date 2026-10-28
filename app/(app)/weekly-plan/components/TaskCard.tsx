@@ -17,18 +17,25 @@ export function TaskCard({
   onLogTime,
   onQuickAction,
 }: TaskCardProps) {
+  const taskId = task.id || task._id || "";
+
   return (
     <div className="group relative flex flex-col justify-between rounded-xl border border-zinc-200/80 bg-white p-3 shadow-2xs hover:border-slate-300 hover:shadow-xs dark:border-zinc-800 dark:bg-zinc-900/90 dark:hover:border-zinc-700 transition-all">
-      {/* Card Top: Code & Hours */}
+      {/* Card Top: Code, Category & Hours */}
       <div className="flex items-center justify-between text-xs">
-        <span className="font-semibold text-slate-500 dark:text-zinc-400 tracking-tight">
-          {task.code}
-          {task.code === "FE-142" && " •"}
-        </span>
+        <div className="flex items-center gap-1.5 font-semibold text-slate-500 dark:text-zinc-400 tracking-tight">
+          <span>{task.code || "TASK"}</span>
+          {task.category && (
+            <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300">
+              {task.category}
+            </span>
+          )}
+        </div>
         <span className="font-medium text-slate-600 dark:text-zinc-400">
-          {task.loggedHours !== undefined
-            ? `${task.loggedHours} / ${task.hours}h`
-            : `${task.hours.toFixed(1)}h`}
+          {(task.actualHours ?? task.loggedHours) !== undefined &&
+          (task.actualHours ?? task.loggedHours ?? 0) > 0
+            ? `${task.actualHours ?? task.loggedHours} / ${task.estimatedHours ?? task.hours ?? 0}h`
+            : `${(task.estimatedHours ?? task.hours ?? 0).toFixed(1)}h`}
         </span>
       </div>
 
@@ -42,7 +49,7 @@ export function TaskCard({
         {task.status === "DONE" && (
           <button
             type="button"
-            onClick={() => onCycleStatus(task.id)}
+            onClick={() => onCycleStatus(taskId)}
             className="flex items-center gap-1 text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium cursor-pointer"
           >
             <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300 text-[10px]">
@@ -56,7 +63,7 @@ export function TaskCard({
           <div className="flex items-center justify-between w-full">
             <button
               type="button"
-              onClick={() => onCycleStatus(task.id)}
+              onClick={() => onCycleStatus(taskId)}
               className="flex items-center gap-1 font-medium text-slate-700 dark:text-zinc-300 hover:text-blue-600 cursor-pointer"
             >
               <Pause className="h-3 w-3 text-slate-600" />
@@ -76,7 +83,7 @@ export function TaskCard({
           <div className="flex items-center justify-between w-full">
             <button
               type="button"
-              onClick={() => onCycleStatus(task.id)}
+              onClick={() => onCycleStatus(taskId)}
               className="text-slate-500 hover:text-slate-800 dark:text-zinc-400 font-medium cursor-pointer"
             >
               To Do
