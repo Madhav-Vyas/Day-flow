@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Clock, CheckCircle2 } from "lucide-react";
-import { toDecimalHours, formatHoursMinutes } from "./NewTaskModal";
+import { formatHoursMinutes, toDecimalHours } from "@/lib/dateUtils";
 
 interface LogTimeModalProps {
   isOpen: boolean;
@@ -77,7 +77,10 @@ export function LogTimeModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 pt-3.5 text-xs">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-3.5 pt-3.5 text-xs"
+        >
           {/* Active Task Summary */}
           <div>
             <span className="block text-[11px] font-semibold text-slate-600 dark:text-zinc-400 mb-1">
@@ -138,7 +141,9 @@ export function LogTimeModal({
                     value={minutes}
                     onChange={(e) => {
                       const val = parseInt(e.target.value, 10);
-                      setMinutes(isNaN(val) ? 0 : Math.max(0, Math.min(59, val)));
+                      setMinutes(
+                        isNaN(val) ? 0 : Math.max(0, Math.min(59, val)),
+                      );
                     }}
                     className="w-full text-xs font-semibold focus:outline-hidden bg-transparent text-slate-900 dark:text-zinc-100"
                     placeholder="0"

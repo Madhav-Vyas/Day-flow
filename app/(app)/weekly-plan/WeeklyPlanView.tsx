@@ -22,7 +22,7 @@ import { BacklogSection } from "./components/BacklogSection";
 import { NewTaskModal } from "./components/NewTaskModal";
 import { LogTimeModal } from "./components/LogTimeModal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createTask, getWeekTasks } from "@/lib/services/task-service";
+import { createTask, getWeekTasks, updateTask } from "@/lib/services/task-service";
 
 interface WeeklyPlanViewProps {
   initialMondayDate: string; // "YYYY-MM-DD"
@@ -43,6 +43,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
   } = useWeeklyPlanStore();
 
   const [isLogTimeModalOpen, setIsLogTimeModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   // Parse current week dates (Monday to Friday: 0 = Mon, 1 = Tue, 2 = Wed, 3 = Thu, 4 = Fri)
   const mondayDate = useMemo(() => {
@@ -142,6 +143,38 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
     createTaskMutation.mutate(taskData);
   };
 
+  const updateTaskMutation = useMutation({
+    mutationFn: updateTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
+  const handleUpdateTask = (taskData: Task) => {
+    updateTaskMutation.mutate(taskData);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setTargetDayIndex(task.dayIndex !== undefined ? task.dayIndex : activeTodayIndex);
+    setIsNewTaskModalOpen(true);
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    console.log("Delete requested for task:", taskId);
+  };
+
+  const handleOpenNewTask = (dayIdx: number) => {
+    setEditingTask(null);
+    setTargetDayIndex(dayIdx);
+    setIsNewTaskModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsNewTaskModalOpen(false);
+    setEditingTask(null);
+  };
+
   const handleLogTime = (_hours: number) => {
     // Optional: Wire with log time mutation
   };
@@ -157,10 +190,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onOpenLogTime={() => setIsLogTimeModalOpen(true)}
-        onOpenNewTask={() => {
-          setTargetDayIndex(activeTodayIndex);
-          setIsNewTaskModalOpen(true);
-        }}
+        onOpenNewTask={() => handleOpenNewTask(activeTodayIndex)}
         totalPlannedHours={totalPlannedHours}
       />
 
@@ -175,10 +205,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
           sprintPercentage={sprintPercentage}
           sprintBuffer={sprintBuffer}
           onDuplicateLastWeek={() => {}}
-          onOpenNewTask={() => {
-            setTargetDayIndex(activeTodayIndex);
-            setIsNewTaskModalOpen(true);
-          }}
+          onOpenNewTask={() => handleOpenNewTask(activeTodayIndex)}
         />
 
         {/* 3. 5-DAY WEEKLY GRID (0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri) */}
@@ -195,10 +222,9 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
                 isToday={day.index === activeTodayIndex}
                 onCycleStatus={handleCycleStatus}
                 onLogTime={() => setIsLogTimeModalOpen(true)}
-                onAddTask={(dayIdx) => {
-                  setTargetDayIndex(dayIdx);
-                  setIsNewTaskModalOpen(true);
-                }}
+                onAddTask={handleOpenNewTask}
+                onEditTask={handleEditTask}
+                onDeleteTask={handleDeleteTask}
               />
             );
           })}
@@ -209,10 +235,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
           tasks={backlogTasks}
           isExpanded={isBacklogExpanded}
           onToggleExpanded={toggleBacklogExpanded}
-          onOpenNewBacklogItem={() => {
-            setTargetDayIndex(-1);
-            setIsNewTaskModalOpen(true);
-          }}
+          onOpenNewBacklogItem={() => handleOpenNewTask(-1)}
           onAddToPlan={handleAddToPlan}
           onPlaceIntoFriday={() => {}}
         />
@@ -221,9 +244,12 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
       {/* MODALS */}
       <NewTaskModal
         isOpen={isNewTaskModalOpen}
-        onClose={() => setIsNewTaskModalOpen(false)}
+        onClose={handleCloseModal}
         defaultDayIndex={targetDayIndex}
         onCreateTask={handleCreateTask}
+        onUpdateTask={handleUpdateTask}
+        initialTask={editingTask}
+        mode={editingTask ? "update" : "create"}
         daysInfo={daysInfo}
       />
 

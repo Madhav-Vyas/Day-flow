@@ -13,6 +13,8 @@ interface DayColumnProps {
   onCycleStatus?: (taskId: string) => void;
   onLogTime?: () => void;
   onAddTask?: (dayIndex: number) => void;
+  onEditTask?: (task: Task) => void;
+  onDeleteTask?: (taskId: string) => void;
   // Backward compatibility optional props:
   stats?: Partial<DayStats> | string;
   onOpenSlotClick?: (dayIndex: number) => void;
@@ -27,6 +29,8 @@ export function DayColumn({
   onLogTime = () => {},
   onAddTask,
   onOpenSlotClick,
+  onEditTask,
+  onDeleteTask,
 }: DayColumnProps) {
   const handleAddTask = () => {
     const handler = onAddTask || onOpenSlotClick;
@@ -111,6 +115,8 @@ export function DayColumn({
             task={task}
             onCycleStatus={onCycleStatus}
             onLogTime={onLogTime}
+            onEdit={onEditTask}
+            onDelete={onDeleteTask}
           />
         ))}
 

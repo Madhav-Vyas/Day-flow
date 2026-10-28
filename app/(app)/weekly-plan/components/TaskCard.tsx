@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Pause } from "lucide-react";
+import { Pause, Pencil, Trash2 } from "lucide-react";
 import { Task } from "./types";
 
 interface TaskCardProps {
@@ -9,6 +9,8 @@ interface TaskCardProps {
   onCycleStatus: (taskId: string) => void;
   onLogTime: () => void;
   onQuickAction?: () => void;
+  onEdit?: (task: Task) => void;
+  onDelete?: (taskId: string) => void;
 }
 
 export function TaskCard({
@@ -16,6 +18,8 @@ export function TaskCard({
   onCycleStatus,
   onLogTime,
   onQuickAction,
+  onEdit,
+  onDelete,
 }: TaskCardProps) {
   const taskId = task.id || task._id || "";
 
@@ -31,12 +35,43 @@ export function TaskCard({
             </span>
           )}
         </div>
-        <span className="font-medium text-slate-600 dark:text-zinc-400">
-          {(task.actualHours ?? task.loggedHours) !== undefined &&
-          (task.actualHours ?? task.loggedHours ?? 0) > 0
-            ? `${task.actualHours ?? task.loggedHours} / ${task.estimatedHours ?? task.hours ?? 0}h`
-            : `${(task.estimatedHours ?? task.hours ?? 0).toFixed(1)}h`}
-        </span>
+
+        <div className="flex items-center gap-1.5">
+          {/* Edit & Delete Action Buttons - Shown only when card is hovered */}
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.(task);
+              }}
+              className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:text-blue-400 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              title="Edit task"
+              aria-label="Edit task"
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(taskId);
+              }}
+              className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+              title="Delete task"
+              aria-label="Delete task"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+
+          <span className="font-medium text-slate-600 dark:text-zinc-400 shrink-0">
+            {(task.actualHours ?? task.loggedHours) !== undefined &&
+            (task.actualHours ?? task.loggedHours ?? 0) > 0
+              ? `${task.actualHours ?? task.loggedHours} / ${task.estimatedHours ?? task.hours ?? 0}h`
+              : `${(task.estimatedHours ?? task.hours ?? 0).toFixed(1)}h`}
+          </span>
+        </div>
       </div>
 
       {/* Card Title */}

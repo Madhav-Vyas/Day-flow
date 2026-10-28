@@ -27,13 +27,23 @@ import {
   TaskCategory,
   DayInfo,
 } from "./types";
+import {
+  formatHoursMinutes,
+  toDecimalHours,
+  fromDecimalHours,
+} from "@/lib/dateUtils";
 
 interface NewTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultDayIndex: number;
-  onCreateTask: (task: CreateTaskInput & { hours?: number; loggedHours?: number }) => void;
+  onCreateTask: (
+    task: CreateTaskInput & { hours?: number; loggedHours?: number },
+  ) => void;
   daysInfo?: DayInfo[];
+  mode?: "create" | "update";
+  initialTask?: Task | null;
+  onUpdateTask?: (task: Task) => void;
 }
 
 /**
@@ -51,7 +61,8 @@ const CATEGORIES: {
     value: "Feature",
     label: "Feature",
     icon: Sparkles,
-    iconClass: "text-blue-600 dark:text-blue-400 bg-blue-100/70 dark:bg-blue-900/50",
+    iconClass:
+      "text-blue-600 dark:text-blue-400 bg-blue-100/70 dark:bg-blue-900/50",
     selectedCardClass:
       "border-blue-500 bg-blue-50/70 text-blue-950 dark:border-blue-400 dark:bg-blue-950/40 dark:text-blue-100 ring-2 ring-blue-500/20",
     unselectedCardClass:
@@ -61,7 +72,8 @@ const CATEGORIES: {
     value: "Bug",
     label: "Bug",
     icon: Bug,
-    iconClass: "text-rose-600 dark:text-rose-400 bg-rose-100/70 dark:bg-rose-900/50",
+    iconClass:
+      "text-rose-600 dark:text-rose-400 bg-rose-100/70 dark:bg-rose-900/50",
     selectedCardClass:
       "border-rose-500 bg-rose-50/70 text-rose-950 dark:border-rose-400 dark:bg-rose-950/40 dark:text-rose-100 ring-2 ring-rose-500/20",
     unselectedCardClass:
@@ -71,7 +83,8 @@ const CATEGORIES: {
     value: "Enhancement",
     label: "Enhancement",
     icon: Zap,
-    iconClass: "text-purple-600 dark:text-purple-400 bg-purple-100/70 dark:bg-purple-900/50",
+    iconClass:
+      "text-purple-600 dark:text-purple-400 bg-purple-100/70 dark:bg-purple-900/50",
     selectedCardClass:
       "border-purple-500 bg-purple-50/70 text-purple-950 dark:border-purple-400 dark:bg-purple-950/40 dark:text-purple-100 ring-2 ring-purple-500/20",
     unselectedCardClass:
@@ -81,7 +94,8 @@ const CATEGORIES: {
     value: "Meetings",
     label: "Meetings",
     icon: Users,
-    iconClass: "text-amber-600 dark:text-amber-400 bg-amber-100/70 dark:bg-amber-900/50",
+    iconClass:
+      "text-amber-600 dark:text-amber-400 bg-amber-100/70 dark:bg-amber-900/50",
     selectedCardClass:
       "border-amber-500 bg-amber-50/70 text-amber-950 dark:border-amber-400 dark:bg-amber-950/40 dark:text-amber-100 ring-2 ring-amber-500/20",
     unselectedCardClass:
@@ -91,7 +105,8 @@ const CATEGORIES: {
     value: "Documentation",
     label: "Documentation",
     icon: BookOpen,
-    iconClass: "text-emerald-600 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-900/50",
+    iconClass:
+      "text-emerald-600 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-900/50",
     selectedCardClass:
       "border-emerald-500 bg-emerald-50/70 text-emerald-950 dark:border-emerald-400 dark:bg-emerald-950/40 dark:text-emerald-100 ring-2 ring-emerald-500/20",
     unselectedCardClass:
@@ -101,55 +116,14 @@ const CATEGORIES: {
     value: "Refactoring",
     label: "Refactoring",
     icon: RefreshCw,
-    iconClass: "text-cyan-600 dark:text-cyan-400 bg-cyan-100/70 dark:bg-cyan-900/50",
+    iconClass:
+      "text-cyan-600 dark:text-cyan-400 bg-cyan-100/70 dark:bg-cyan-900/50",
     selectedCardClass:
       "border-cyan-500 bg-cyan-50/70 text-cyan-950 dark:border-cyan-400 dark:bg-cyan-950/40 dark:text-cyan-100 ring-2 ring-cyan-500/20",
     unselectedCardClass:
       "border-zinc-200/90 bg-white hover:border-cyan-200 hover:bg-slate-50/80 dark:border-zinc-800 dark:bg-zinc-850 dark:hover:border-zinc-700 text-slate-700 dark:text-zinc-200",
   },
 ];
-
-/**
- * Converts human hours and minutes to decimal hours for the backend.
- * Formula: hours + (minutes / 60)
- * Example: 1h 30m -> 1.50
- * Example: 2h 20m -> 2.33
- */
-export function toDecimalHours(
-  hours: number | string,
-  minutes: number | string
-): number {
-  const h = Math.max(0, parseInt(String(hours), 10) || 0);
-  const m = Math.max(0, Math.min(59, parseInt(String(minutes), 10) || 0));
-  return parseFloat((h + m / 60).toFixed(2));
-}
-
-/**
- * Converts decimal hours back to hours and minutes (useful when editing).
- * Example: 2.33 -> { hours: 2, minutes: 20 }
- */
-export function fromDecimalHours(decimal: number): {
-  hours: number;
-  minutes: number;
-} {
-  const totalMinutes = Math.round((Number(decimal) || 0) * 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return { hours, minutes };
-}
-
-/**
- * Formats hours and minutes into clean human-readable text.
- * Example: 2, 20 -> "2h 20m"
- */
-export function formatHoursMinutes(hours: number, minutes: number): string {
-  const h = Number(hours) || 0;
-  const m = Number(minutes) || 0;
-  if (h === 0 && m === 0) return "0m";
-  if (h === 0) return `${m}m`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
-}
 
 /**
  * Reusable, intuitive Hours & Minutes Picker Component
@@ -220,7 +194,9 @@ function TimePickerInput({
               }
               className="w-full text-xs font-semibold focus:outline-hidden bg-transparent text-slate-900 dark:text-zinc-100"
             />
-            <span className="text-slate-400 text-[11px] font-medium ml-1">hrs</span>
+            <span className="text-slate-400 text-[11px] font-medium ml-1">
+              hrs
+            </span>
           </div>
         </div>
 
@@ -237,12 +213,16 @@ function TimePickerInput({
               value={minutes}
               onChange={(e) => {
                 const val = parseInt(e.target.value, 10);
-                onMinutesChange(isNaN(val) ? 0 : Math.max(0, Math.min(59, val)));
+                onMinutesChange(
+                  isNaN(val) ? 0 : Math.max(0, Math.min(59, val)),
+                );
               }}
               className="w-full text-xs font-semibold focus:outline-hidden bg-transparent text-slate-900 dark:text-zinc-100"
               placeholder="0"
             />
-            <span className="text-slate-400 text-[11px] font-medium ml-1">mins</span>
+            <span className="text-slate-400 text-[11px] font-medium ml-1">
+              mins
+            </span>
           </div>
         </div>
       </div>
@@ -285,7 +265,12 @@ export function NewTaskModal({
   defaultDayIndex,
   onCreateTask,
   daysInfo,
+  mode = "create",
+  initialTask,
+  onUpdateTask,
 }: NewTaskModalProps) {
+  const isEdit = mode === "update" || Boolean(initialTask);
+
   // 1. Form Schema States
   const [category, setCategory] = useState<TaskCategory>("Feature");
   const [title, setTitle] = useState("");
@@ -297,21 +282,58 @@ export function NewTaskModal({
   const selectedDayInfo = daysInfo?.find((d) => d.index === Number(dayIndex));
 
   // 2. Simple Hours & Minutes States
-  // Estimated Time (defaults to 2h 0m)
   const [estHours, setEstHours] = useState<number>(2);
   const [estMinutes, setEstMinutes] = useState<number>(0);
 
-  // Actual / Logged Time (defaults to 0, collapsible)
+  // Actual / Logged Time
   const [showActualTime, setShowActualTime] = useState<boolean>(false);
   const [actHours, setActHours] = useState<number>(0);
   const [actMinutes, setActMinutes] = useState<number>(0);
 
-  // Reset or initialize state when modal opens
+  // Synchronize state when modal opens or initialTask changes
   useEffect(() => {
     if (isOpen) {
-      setDayIndex(defaultDayIndex);
+      if (initialTask) {
+        setCategory((initialTask.category as TaskCategory) || "Feature");
+        setTitle(initialTask.title || "");
+        setCode(initialTask.code || "");
+        setDescription(initialTask.description || "");
+        setPriority((initialTask.priority as TaskPriority) || "MEDIUM");
+        setStatus((initialTask.status as TaskStatus) || "TODO");
+        setDayIndex(
+          initialTask.dayIndex !== undefined
+            ? Number(initialTask.dayIndex)
+            : defaultDayIndex,
+        );
+
+        const est = fromDecimalHours(
+          initialTask.estimatedHours ?? initialTask.hours ?? 2,
+        );
+        setEstHours(est.hours);
+        setEstMinutes(est.minutes);
+
+        const actualVal =
+          initialTask.actualHours ?? initialTask.loggedHours ?? 0;
+        const act = fromDecimalHours(actualVal);
+        setActHours(act.hours);
+        setActMinutes(act.minutes);
+        setShowActualTime(actualVal > 0);
+      } else {
+        setCategory("Feature");
+        setTitle("");
+        setCode("");
+        setDescription("");
+        setPriority("MEDIUM");
+        setStatus("TODO");
+        setDayIndex(defaultDayIndex);
+        setEstHours(2);
+        setEstMinutes(0);
+        setActHours(0);
+        setActMinutes(0);
+        setShowActualTime(false);
+      }
     }
-  }, [isOpen, defaultDayIndex]);
+  }, [isOpen, initialTask, defaultDayIndex]);
 
   // Close on Escape key
   useEffect(() => {
@@ -340,34 +362,48 @@ export function NewTaskModal({
     const selectedDay = daysInfo?.find((d) => d.index === Number(dayIndex));
     const plannedDate = selectedDay ? selectedDay.formatted : null;
 
-    onCreateTask({
-      category,
-      title: title.trim(),
-      code: code.trim() || undefined,
-      description: description.trim() || undefined,
-      priority,
-      status,
-      dayIndex: Number(dayIndex),
-      plannedDate,
-      estimatedHours: estimatedDecimal,
-      actualHours: actualDecimal,
-      // Compatibility fallbacks
-      hours: estimatedDecimal,
-      loggedHours: actualDecimal,
-    });
+    if (isEdit && initialTask) {
+      const updated: Task = {
+        ...initialTask,
+        id: initialTask.id || initialTask._id,
+        _id: initialTask._id,
+        category,
+        title: title.trim(),
+        code: code.trim() || undefined,
+        description: description.trim() || undefined,
+        priority,
+        status,
+        dayIndex: Number(dayIndex),
+        plannedDate,
+        estimatedHours: estimatedDecimal,
+        actualHours: actualDecimal,
+        hours: estimatedDecimal,
+        loggedHours: actualDecimal,
+      };
 
-    // Reset form fields
-    setCategory("Feature");
-    setTitle("");
-    setCode("");
-    setDescription("");
-    setPriority("MEDIUM");
-    setStatus("TODO");
-    setEstHours(2);
-    setEstMinutes(0);
-    setActHours(0);
-    setActMinutes(0);
-    setShowActualTime(false);
+      if (onUpdateTask) {
+        onUpdateTask(updated);
+      } else {
+        onCreateTask(updated as any);
+      }
+    } else {
+      onCreateTask({
+        category,
+        title: title.trim(),
+        code: code.trim() || undefined,
+        description: description.trim() || undefined,
+        priority,
+        status,
+        dayIndex: Number(dayIndex),
+        plannedDate,
+        estimatedHours: estimatedDecimal,
+        actualHours: actualDecimal,
+        // Compatibility fallbacks
+        hours: estimatedDecimal,
+        loggedHours: actualDecimal,
+      });
+    }
+
     onClose();
   };
 
@@ -385,10 +421,12 @@ export function NewTaskModal({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-zinc-100 leading-none">
-                Create New Task
+                {isEdit ? "Edit Task" : "Create New Task"}
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
-                Add an item to your weekly sprint plan
+                {isEdit
+                  ? "Update task details and sprint assignment"
+                  : "Add an item to your weekly sprint plan"}
               </p>
             </div>
           </div>
@@ -402,7 +440,10 @@ export function NewTaskModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 pt-4 text-xs">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-4 pt-4 text-xs"
+        >
           {/* 1. CATEGORY SELECTOR (PROMINENT AT TOP) */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -412,7 +453,10 @@ export function NewTaskModal({
                 <span className="text-rose-500">*</span>
               </label>
               <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">
-                Selected: <span className="font-semibold text-slate-800 dark:text-zinc-200">{category}</span>
+                Selected:{" "}
+                <span className="font-semibold text-slate-800 dark:text-zinc-200">
+                  {category}
+                </span>
               </span>
             </div>
 
@@ -555,7 +599,9 @@ export function NewTaskModal({
                 Already spent time on this?
               </span>
               <div className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
-                <span>{showActualTime ? "Hide initial time" : "+ Add logged time"}</span>
+                <span>
+                  {showActualTime ? "Hide initial time" : "+ Add logged time"}
+                </span>
                 {showActualTime ? (
                   <ChevronUp className="h-3.5 w-3.5" />
                 ) : (
@@ -656,7 +702,7 @@ export function NewTaskModal({
               type="submit"
               className="rounded-lg bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 transition-all cursor-pointer"
             >
-              Create Task
+              {isEdit ? "Save Changes" : "Create Task"}
             </button>
           </div>
         </form>

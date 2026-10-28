@@ -16,9 +16,21 @@ export async function createTask(taskData: CreateTaskInput) {
 }
 
 export async function getWeekTasks(week: string): Promise<Task[]> {
-  const response = await axiosInstance.get(
-    `/api/v1/tasks/weekly/${week}`,
-  );
+  const response = await axiosInstance.get(`/api/v1/tasks/weekly/${week}`);
   const data = response.data?.data ?? response.data?.tasks ?? response.data;
   return Array.isArray(data) ? data : [];
+}
+
+export async function updateTask(taskData: Task) {
+  const taskId = taskData.id || taskData._id;
+  const response = await axiosInstance.put(
+    `/api/v1/tasks/${taskId}`,
+    taskData,
+  );
+  return response.data?.data ?? response.data;
+}
+
+export async function deleteTask(taskId: string) {
+  const response = await axiosInstance.delete(`/api/v1/tasks/${taskId}`);
+  return response.data?.data ?? response.data;
 }
