@@ -4,7 +4,7 @@ import {
   Task,
 } from "@/app/(app)/weekly-plan/components/types";
 
-const axiosInstance = axios.create({
+export const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   withCredentials: true,
 });
@@ -23,10 +23,7 @@ export async function getWeekTasks(week: string): Promise<Task[]> {
 
 export async function updateTask(taskData: Task) {
   const taskId = taskData.id || taskData._id;
-  const response = await axiosInstance.put(
-    `/api/v1/tasks/${taskId}`,
-    taskData,
-  );
+  const response = await axiosInstance.put(`/api/v1/tasks/${taskId}`, taskData);
   return response.data?.data ?? response.data;
 }
 
