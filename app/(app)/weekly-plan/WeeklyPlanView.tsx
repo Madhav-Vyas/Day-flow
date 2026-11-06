@@ -24,6 +24,7 @@ import { NewTaskModal } from "./components/NewTaskModal";
 import { LogTimeModal } from "./components/LogTimeModal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createTask, getWeekTasks, updateTask } from "@/lib/services/task-service";
+import { useTimerStore } from "@/lib/stores/timerStore";
 
 interface WeeklyPlanViewProps {
   initialMondayDate: string; // "YYYY-MM-DD"
@@ -127,9 +128,36 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
     return filteredTasks.filter((t) => Number(t.dayIndex) === -1);
   }, [filteredTasks]);
 
+  const handleTaskCompleted = useTimerStore((state) => state.handleTaskCompleted);
+
   // Handlers for TanStack Query mutations
-  const handleCycleStatus = (_taskId: string) => {
-    // Optional: Wire with task status update mutation
+  const handleCycleStatus = (taskId: string) => {
+    const task = tasks.find((t) => (t.id || t._id) === taskId);
+    if (!task) return;
+    const nextStatus: Record<string, string> = {
+      TODO: "IN_PROGRESS",
+      IN_PROGRESS: "DONE",
+      DONE: "TODO",
+    };
+    const current = task.status || "TODO";
+    const newStatus = nextStatus[current] || "TODO";
+
+    if (newStatus === "DONE") {
+      handleTaskCompleted(taskId, (tId, totalHours) => {
+        updateTaskMutation.mutate({
+          ...task,
+          status: "DONE" as any,
+          actualHours: totalHours,
+          loggedHours: totalHours,
+        });
+      });
+      return;
+    }
+
+    updateTaskMutation.mutate({
+      ...task,
+      status: newStatus as any,
+    });
   };
 
   const createTaskMutation = useMutation({

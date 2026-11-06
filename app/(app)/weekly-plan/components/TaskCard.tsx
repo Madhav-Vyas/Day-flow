@@ -3,6 +3,7 @@
 import React from "react";
 import { Pause, Pencil, Trash2 } from "lucide-react";
 import { Task } from "./types";
+import { useTimerStore } from "@/lib/stores/timerStore";
 
 interface TaskCardProps {
   task: Task;
@@ -22,12 +23,21 @@ export function TaskCard({
   onDelete,
 }: TaskCardProps) {
   const taskId = task.id || task._id || "";
+  const activeTaskId = useTimerStore((s) => s.activeTaskId);
+  const timerStatus = useTimerStore((s) => s.timerStatus);
+  const isTimerRunning = activeTaskId === taskId && timerStatus === "RUNNING";
 
   return (
     <div className="group relative flex flex-col justify-between rounded-xl border border-zinc-200/80 bg-white p-3 shadow-2xs hover:border-slate-300 hover:shadow-xs dark:border-zinc-800 dark:bg-zinc-900/90 dark:hover:border-zinc-700 transition-all">
       {/* Card Top: Code, Category & Hours */}
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-1.5 font-semibold text-slate-500 dark:text-zinc-400 tracking-tight">
+          {isTimerRunning && (
+            <span className="relative flex h-2 w-2" title="Timer active">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+          )}
           <span>{task.code || "TASK"}</span>
           {task.category && (
             <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300">

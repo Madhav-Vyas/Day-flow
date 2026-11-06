@@ -1,3 +1,5 @@
+import type { TimeSession } from "@/lib/timerUtils";
+
 export type TaskStatus = "DONE" | "IN_PROGRESS" | "TODO";
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 export type TaskCategory =
@@ -19,6 +21,7 @@ export interface Task {
   priority: TaskPriority | string;
   estimatedHours: number;
   actualHours?: number;
+  timeSessions?: TimeSession[];
   dayIndex: number; // 0 = Mon, 1 = Tue, 2 = Wed, 3 = Thu, 4 = Fri, -1 = Backlog
   status: TaskStatus;
   // Compatibility helpers

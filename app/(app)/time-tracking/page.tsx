@@ -33,6 +33,8 @@ import {
   deleteTask,
 } from "@/lib/services/task-service";
 import { useTodaysTaskStore, StatusFilter } from "@/lib/stores/todaysTaskStore";
+import { useTimerStore } from "@/lib/stores/timerStore";
+import { TaskTimerControls } from "./components/TaskTimerControls";
 
 const PRIORITY_STYLES: Record<string, { label: string; className: string }> = {
   URGENT: {
@@ -164,6 +166,8 @@ export default function TimeTrackingPage() {
     }
   };
 
+  const handleTaskCompleted = useTimerStore((state) => state.handleTaskCompleted);
+
   const handleToggleStatus = (task: Task) => {
     const nextStatus: Record<TaskStatus, TaskStatus> = {
       TODO: "IN_PROGRESS",
@@ -171,9 +175,34 @@ export default function TimeTrackingPage() {
       DONE: "TODO",
     };
     const current = (task.status as TaskStatus) || "TODO";
+    const newStatus = nextStatus[current] || "TODO";
+    const taskId = task.id || task._id || "";
+
+    if (newStatus === "DONE") {
+      handleTaskCompleted(taskId, (tId, totalHours) => {
+        updateTaskMutation.mutate({
+          ...task,
+          status: "DONE",
+          actualHours: totalHours,
+          loggedHours: totalHours,
+        });
+      });
+      return;
+    }
+
     updateTaskMutation.mutate({
       ...task,
-      status: nextStatus[current] || "TODO",
+      status: newStatus,
+    });
+  };
+
+  const handleSaveTrackedTime = (taskId: string, totalHours: number) => {
+    const target = tasks.find((t) => (t.id || t._id) === taskId);
+    if (!target) return;
+    updateTaskMutation.mutate({
+      ...target,
+      actualHours: totalHours,
+      loggedHours: totalHours,
     });
   };
 
@@ -604,15 +633,22 @@ export default function TimeTrackingPage() {
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenLogTime(task)}
-                        className="inline-flex h-8 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                        title="Log time on this task"
-                      >
-                        <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                        <span className="hidden md:inline">Log</span>
-                      </button>
+                      <TaskTimerControls
+                        task={task}
+                        onSaveTime={handleSaveTrackedTime}
+                      />
+
+                      {!isDone && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenLogTime(task)}
+                          className="inline-flex h-8 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                          title="Manual log time on this task"
+                        >
+                          <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                          <span className="hidden md:inline">Log</span>
+                        </button>
+                      )}
 
                       <button
                         type="button"
