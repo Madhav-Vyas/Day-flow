@@ -11,7 +11,7 @@ async function WeeklyPlanContent({
   const params = await searchParams;
 
   // Resolve Monday of the requested week (defaults to Oct 21, 2024 if matching initial demo or current week)
-  const monday = getStartOfWeek(params?.week || "2024-10-21");
+  const monday = getStartOfWeek(params?.week);
   const formattedMonday = formatDateForUrl(monday);
 
   // If ?week= is not provided, redirect cleanly to normalize the URL

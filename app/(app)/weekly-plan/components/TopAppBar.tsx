@@ -3,12 +3,16 @@
 import React from "react";
 import { Search, Clock, Plus, Calendar } from "lucide-react";
 
-interface TopAppBarProps {
+export interface TopAppBarProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
   onOpenLogTime: () => void;
   onOpenNewTask: () => void;
-  totalPlannedHours: number;
+  totalPlannedHours?: number;
+  loggedHours?: number;
+  targetHours?: number;
+  dateLabel?: string;
+  breadcrumbPage?: string;
 }
 
 export function TopAppBar({
@@ -17,7 +21,14 @@ export function TopAppBar({
   onOpenLogTime,
   onOpenNewTask,
   totalPlannedHours,
+  loggedHours,
+  targetHours = 8.0,
+  dateLabel = "Today",
+  breadcrumbPage = "Workspace",
 }: TopAppBarProps) {
+  const currentHours = loggedHours ?? totalPlannedHours ?? 0;
+  const percentage = Math.min(Math.round((currentHours / targetHours) * 100), 100);
+
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-zinc-200/80 bg-white/95 px-6 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95">
       {/* Left: Breadcrumbs & Date */}
@@ -25,11 +36,11 @@ export function TopAppBar({
         <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 font-medium">
           <span>DayFlow</span>
           <span>&gt;</span>
-          <span className="text-slate-800 dark:text-zinc-200">Workspace</span>
+          <span className="text-slate-800 dark:text-zinc-200">{breadcrumbPage}</span>
         </div>
         <div className="hidden sm:flex items-center gap-1.5 rounded-md bg-slate-100/80 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-zinc-800/80 dark:text-zinc-300">
           <Calendar className="h-3.5 w-3.5 text-slate-500" />
-          <span>Wednesday, Oct 23</span>
+          <span>{dateLabel}</span>
         </div>
       </div>
 
@@ -41,11 +52,11 @@ export function TopAppBar({
         <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200 dark:bg-zinc-800">
           <div
             className="h-full bg-slate-700 dark:bg-zinc-300 transition-all duration-300"
-            style={{ width: "68%" }}
+            style={{ width: `${percentage}%` }}
           />
         </div>
         <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
-          5.5h / 8.0h
+          {currentHours.toFixed(1)}h / {targetHours.toFixed(1)}h
         </span>
       </div>
 

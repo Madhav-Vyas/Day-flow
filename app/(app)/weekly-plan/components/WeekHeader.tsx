@@ -12,6 +12,7 @@ interface WeekHeaderProps {
   targetSprintHours: number;
   sprintPercentage: number;
   sprintBuffer: number;
+  isCurrentWeek?: boolean;
   onDuplicateLastWeek: () => void;
   onOpenNewTask: () => void;
 }
@@ -24,6 +25,7 @@ export function WeekHeader({
   targetSprintHours,
   sprintPercentage,
   sprintBuffer,
+  isCurrentWeek = false,
   onDuplicateLastWeek,
   onOpenNewTask,
 }: WeekHeaderProps) {
@@ -42,9 +44,18 @@ export function WeekHeader({
           {weekRangeDisplay}
         </span>
 
-        <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
-          Current Week
-        </span>
+        {isCurrentWeek ? (
+          <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+            Current Week
+          </span>
+        ) : (
+          <Link
+            href="/weekly-plan"
+            className="rounded-md bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
+          >
+            Go to Current Week
+          </Link>
+        )}
 
         <Link
           href={`/weekly-plan?week=${nextWeekMonday}`}

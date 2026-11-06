@@ -6,6 +6,7 @@ import {
   addDays,
   addWeeks,
   formatWeekRange,
+  getMonday,
 } from "@/lib/dateUtils";
 
 import { Task, DayInfo, CreateTaskInput } from "./components/types";
@@ -47,8 +48,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
 
   // Parse current week dates (Monday to Friday: 0 = Mon, 1 = Tue, 2 = Wed, 3 = Thu, 4 = Fri)
   const mondayDate = useMemo(() => {
-    const parts = initialMondayDate.split("-").map(Number);
-    return new Date(parts[0], parts[1] - 1, parts[2]);
+    return getMonday(initialMondayDate);
   }, [initialMondayDate]);
 
   const daysInfo: DayInfo[] = useMemo(() => {
@@ -204,6 +204,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
           targetSprintHours={TARGET_SPRINT_HOURS}
           sprintPercentage={sprintPercentage}
           sprintBuffer={sprintBuffer}
+          isCurrentWeek={todayIndex !== -1}
           onDuplicateLastWeek={() => {}}
           onOpenNewTask={() => handleOpenNewTask(activeTodayIndex)}
         />

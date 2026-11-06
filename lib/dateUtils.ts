@@ -18,23 +18,28 @@ export function isValidDate(date?: DateInput): boolean {
 
 /**
  * Returns Monday (start of ISO week) for the given date.
+ * Explicitly computes difference to Monday so it never depends on external plugin state.
  */
 export function getMonday(date?: DateInput): Date {
-  return toSafeDayjs(date).startOf("isoWeek").toDate();
+  const d = toSafeDayjs(date);
+  const day = d.day(); // 0 is Sunday, 1 is Monday, ..., 6 is Saturday
+  const diffToMonday = day === 0 ? 6 : day - 1;
+  return d.subtract(diffToMonday, "day").startOf("day").toDate();
 }
 
 /**
  * Returns start of ISO week (Monday at 00:00:00.000).
  */
 export function getStartOfWeek(date?: DateInput): Date {
-  return toSafeDayjs(date).startOf("isoWeek").toDate();
+  return getMonday(date);
 }
 
 /**
  * Returns end of ISO week (Sunday at 23:59:59.999).
  */
 export function getEndOfWeek(date?: DateInput): Date {
-  return toSafeDayjs(date).endOf("isoWeek").toDate();
+  const monday = getMonday(date);
+  return dayjs(monday).add(6, "day").endOf("day").toDate();
 }
 
 /**
@@ -121,4 +126,3 @@ export function toDecimalHours(
   const m = Math.max(0, Math.min(59, parseInt(String(minutes), 10) || 0));
   return parseFloat((h + m / 60).toFixed(2));
 }
-
