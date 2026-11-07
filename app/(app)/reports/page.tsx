@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 export default function Reports() {
-  return <div>Reports</div>;
+  redirect("/reports/daily");
 }
