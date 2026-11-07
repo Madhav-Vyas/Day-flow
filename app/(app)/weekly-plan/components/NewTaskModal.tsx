@@ -63,43 +63,55 @@ const CATEGORIES: {
     value: "Feature",
     label: "Feature",
     icon: Sparkles,
-    badgeClass: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60",
-    activeClass: "bg-blue-600 text-white dark:bg-blue-500 border-blue-600 shadow-xs",
+    badgeClass:
+      "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60",
+    activeClass:
+      "bg-blue-600 text-white dark:bg-blue-500 border-blue-600 shadow-xs",
   },
   {
     value: "Bug",
     label: "Bug",
     icon: Bug,
-    badgeClass: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60",
-    activeClass: "bg-rose-600 text-white dark:bg-rose-500 border-rose-600 shadow-xs",
+    badgeClass:
+      "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60",
+    activeClass:
+      "bg-rose-600 text-white dark:bg-rose-500 border-rose-600 shadow-xs",
   },
   {
     value: "Enhancement",
     label: "Enhance",
     icon: Zap,
-    badgeClass: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-900/60",
-    activeClass: "bg-purple-600 text-white dark:bg-purple-500 border-purple-600 shadow-xs",
+    badgeClass:
+      "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-900/60",
+    activeClass:
+      "bg-purple-600 text-white dark:bg-purple-500 border-purple-600 shadow-xs",
   },
   {
     value: "Meetings",
     label: "Meeting",
     icon: Users,
-    badgeClass: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60",
-    activeClass: "bg-amber-600 text-white dark:bg-amber-500 border-amber-600 shadow-xs",
+    badgeClass:
+      "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60",
+    activeClass:
+      "bg-amber-600 text-white dark:bg-amber-500 border-amber-600 shadow-xs",
   },
   {
     value: "Documentation",
     label: "Docs",
     icon: BookOpen,
-    badgeClass: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60",
-    activeClass: "bg-emerald-600 text-white dark:bg-emerald-500 border-emerald-600 shadow-xs",
+    badgeClass:
+      "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60",
+    activeClass:
+      "bg-emerald-600 text-white dark:bg-emerald-500 border-emerald-600 shadow-xs",
   },
   {
     value: "Refactoring",
     label: "Refactor",
     icon: RefreshCw,
-    badgeClass: "text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-900/60",
-    activeClass: "bg-cyan-600 text-white dark:bg-cyan-500 border-cyan-600 shadow-xs",
+    badgeClass:
+      "text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-900/60",
+    activeClass:
+      "bg-cyan-600 text-white dark:bg-cyan-500 border-cyan-600 shadow-xs",
   },
 ];
 
@@ -198,19 +210,37 @@ export function NewTaskModal({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, title, category, code, description, priority, status, dayIndex, estHours, estMinutes, actHours, actMinutes, showActualTime]);
+  }, [
+    isOpen,
+    title,
+    category,
+    code,
+    description,
+    priority,
+    status,
+    dayIndex,
+    estHours,
+    estMinutes,
+    actHours,
+    actMinutes,
+    showActualTime,
+  ]);
 
   if (!isOpen) return null;
 
   const selectedDayInfo = daysInfo?.find((d) => d.index === Number(dayIndex));
   const estimatedDecimal = toDecimalHours(estHours, estMinutes);
-  const actualDecimal = showActualTime ? toDecimalHours(actHours, actMinutes) : 0;
+  const actualDecimal = showActualTime
+    ? toDecimalHours(actHours, actMinutes)
+    : 0;
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!title.trim()) return;
 
-    const plannedDate = selectedDayInfo ? selectedDayInfo.formatted : null;
+    const plannedDate = selectedDayInfo
+      ? selectedDayInfo.formatted
+      : initialTask?.plannedDate || null;
 
     if (isEdit && initialTask) {
       const updated: Task = {
@@ -365,7 +395,8 @@ export function NewTaskModal({
                     <span>Estimated Time</span>
                   </span>
                   <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/50 dark:border-blue-800/50 px-2 py-0.5 rounded-md">
-                    {formatHoursMinutes(estHours, estMinutes)} ({estimatedDecimal}h)
+                    {formatHoursMinutes(estHours, estMinutes)} (
+                    {estimatedDecimal}h)
                   </span>
                 </div>
 
@@ -377,7 +408,9 @@ export function NewTaskModal({
                       max="24"
                       value={estHours}
                       onChange={(e) =>
-                        setEstHours(Math.max(0, parseInt(e.target.value, 10) || 0))
+                        setEstHours(
+                          Math.max(0, parseInt(e.target.value, 10) || 0),
+                        )
                       }
                       className="w-full text-xs font-semibold focus:outline-hidden bg-transparent text-slate-900 dark:text-zinc-100"
                     />
@@ -395,7 +428,9 @@ export function NewTaskModal({
                       value={estMinutes}
                       onChange={(e) => {
                         const val = parseInt(e.target.value, 10);
-                        setEstMinutes(isNaN(val) ? 0 : Math.max(0, Math.min(59, val)));
+                        setEstMinutes(
+                          isNaN(val) ? 0 : Math.max(0, Math.min(59, val)),
+                        );
                       }}
                       className="w-full text-xs font-semibold focus:outline-hidden bg-transparent text-slate-900 dark:text-zinc-100"
                     />
@@ -439,11 +474,14 @@ export function NewTaskModal({
                       <ChevronDown className="h-3.5 w-3.5" />
                     )}
                     <span>
-                      {showActualTime ? "Hide logged time" : "+ Add logged time (optional)"}
+                      {showActualTime
+                        ? "Hide logged time"
+                        : "+ Add logged time (optional)"}
                     </span>
                     {showActualTime && (
                       <span className="ml-auto font-semibold text-emerald-600 dark:text-emerald-400">
-                        {formatHoursMinutes(actHours, actMinutes)} ({actualDecimal}h)
+                        {formatHoursMinutes(actHours, actMinutes)} (
+                        {actualDecimal}h)
                       </span>
                     )}
                   </button>
@@ -457,7 +495,9 @@ export function NewTaskModal({
                           max="24"
                           value={actHours}
                           onChange={(e) =>
-                            setActHours(Math.max(0, parseInt(e.target.value, 10) || 0))
+                            setActHours(
+                              Math.max(0, parseInt(e.target.value, 10) || 0),
+                            )
                           }
                           className="w-full text-xs font-semibold focus:outline-hidden bg-transparent text-slate-900 dark:text-zinc-100"
                         />
@@ -474,7 +514,9 @@ export function NewTaskModal({
                           value={actMinutes}
                           onChange={(e) => {
                             const val = parseInt(e.target.value, 10);
-                            setActMinutes(isNaN(val) ? 0 : Math.max(0, Math.min(59, val)));
+                            setActMinutes(
+                              isNaN(val) ? 0 : Math.max(0, Math.min(59, val)),
+                            );
                           }}
                           className="w-full text-xs font-semibold focus:outline-hidden bg-transparent text-slate-900 dark:text-zinc-100"
                         />
@@ -584,8 +626,15 @@ export function NewTaskModal({
           {/* 3. MODAL FOOTER */}
           <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50">
             <div className="text-[11px] text-slate-400 dark:text-zinc-500 hidden sm:block">
-              Press <kbd className="px-1.5 py-0.5 rounded bg-zinc-200/60 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 text-[10px] font-mono">Esc</kbd> to cancel,{" "}
-              <kbd className="px-1.5 py-0.5 rounded bg-zinc-200/60 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 text-[10px] font-mono">Ctrl+Enter</kbd> to submit
+              Press{" "}
+              <kbd className="px-1.5 py-0.5 rounded bg-zinc-200/60 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 text-[10px] font-mono">
+                Esc
+              </kbd>{" "}
+              to cancel,{" "}
+              <kbd className="px-1.5 py-0.5 rounded bg-zinc-200/60 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 text-[10px] font-mono">
+                Ctrl+Enter
+              </kbd>{" "}
+              to submit
             </div>
 
             <div className="flex items-center gap-2.5 ml-auto">

@@ -7,13 +7,11 @@ import {
   addWeeks,
   formatWeekRange,
   getMonday,
+  getSprintName,
 } from "@/lib/dateUtils";
 
 import { Task, DayInfo, CreateTaskInput } from "./components/types";
-import {
-  DAY_NAMES,
-  TARGET_SPRINT_HOURS,
-} from "./components/mockData";
+import { DAY_NAMES, TARGET_SPRINT_HOURS } from "./components/mockData";
 import { useWeeklyPlanStore } from "@/lib/stores/weeklyPlanStore";
 
 import { TopAppBar } from "./components/TopAppBar";
@@ -23,7 +21,11 @@ import { BacklogSection } from "./components/BacklogSection";
 import { NewTaskModal } from "./components/NewTaskModal";
 import { LogTimeModal } from "./components/LogTimeModal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createTask, getWeekTasks, updateTask } from "@/lib/services/task-service";
+import {
+  createTask,
+  getWeekTasks,
+  updateTask,
+} from "@/lib/services/task-service";
 import { useTimerStore } from "@/lib/stores/timerStore";
 
 interface WeeklyPlanViewProps {
@@ -84,7 +86,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
   const tasks: Task[] = useMemo(() => {
     const list = Array.isArray(rawTasks)
       ? rawTasks
-      : (rawTasks as any)?.data ?? (rawTasks as any)?.tasks ?? [];
+      : ((rawTasks as any)?.data ?? (rawTasks as any)?.tasks ?? []);
     return list.map((t: any) => ({
       ...t,
       id: t.id || t._id,
@@ -101,7 +103,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
         t.title?.toLowerCase().includes(query) ||
         t.category?.toLowerCase().includes(query) ||
         t.code?.toLowerCase().includes(query) ||
-        t.description?.toLowerCase().includes(query)
+        t.description?.toLowerCase().includes(query),
     );
   }, [tasks, searchQuery]);
 
@@ -122,13 +124,16 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
   const prevWeekMonday = formatDateForUrl(addWeeks(mondayDate, -1));
   const nextWeekMonday = formatDateForUrl(addWeeks(mondayDate, 1));
   const weekRangeDisplay = formatWeekRange(mondayDate);
+  const sprintLabel = useMemo(() => getSprintName(mondayDate), [mondayDate]);
 
   // Backlog tasks (dayIndex === -1)
   const backlogTasks = useMemo(() => {
     return filteredTasks.filter((t) => Number(t.dayIndex) === -1);
   }, [filteredTasks]);
 
-  const handleTaskCompleted = useTimerStore((state) => state.handleTaskCompleted);
+  const handleTaskCompleted = useTimerStore(
+    (state) => state.handleTaskCompleted,
+  );
 
   // Handlers for TanStack Query mutations
   const handleCycleStatus = (taskId: string) => {
@@ -143,15 +148,18 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
     const newStatus = nextStatus[current] || "TODO";
 
     if (newStatus === "DONE") {
-      handleTaskCompleted(taskId, (tId, totalHours) => {
-        updateTaskMutation.mutate({
-          ...task,
-          status: "DONE" as any,
-          actualHours: totalHours,
-          loggedHours: totalHours,
+      const activeTaskId = useTimerStore.getState().activeTaskId;
+      if (activeTaskId === taskId) {
+        handleTaskCompleted(taskId, (_tId, totalHours) => {
+          updateTaskMutation.mutate({
+            ...task,
+            status: "DONE" as any,
+            actualHours: totalHours,
+            loggedHours: totalHours,
+          });
         });
-      });
-      return;
+        return;
+      }
     }
 
     updateTaskMutation.mutate({
@@ -164,6 +172,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
     mutationFn: createTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["todaystask"] });
     },
   });
 
@@ -175,6 +184,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
     mutationFn: updateTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["todaystask"] });
     },
   });
 
@@ -184,7 +194,9 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
-    setTargetDayIndex(task.dayIndex !== undefined ? task.dayIndex : activeTodayIndex);
+    setTargetDayIndex(
+      task.dayIndex !== undefined ? task.dayIndex : activeTodayIndex,
+    );
     setIsNewTaskModalOpen(true);
   };
 
@@ -228,6 +240,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
           prevWeekMonday={prevWeekMonday}
           nextWeekMonday={nextWeekMonday}
           weekRangeDisplay={weekRangeDisplay}
+          sprintLabel={sprintLabel}
           totalPlannedHours={totalPlannedHours}
           targetSprintHours={TARGET_SPRINT_HOURS}
           sprintPercentage={sprintPercentage}
@@ -241,7 +254,7 @@ export function WeeklyPlanView({ initialMondayDate }: WeeklyPlanViewProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
           {daysInfo.map((day) => {
             const dayTasks = filteredTasks.filter(
-              (t) => Number(t.dayIndex) === day.index
+              (t) => Number(t.dayIndex) === day.index,
             );
             return (
               <DayColumn

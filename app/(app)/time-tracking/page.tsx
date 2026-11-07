@@ -39,19 +39,23 @@ import { TaskTimerControls } from "./components/TaskTimerControls";
 const PRIORITY_STYLES: Record<string, { label: string; className: string }> = {
   URGENT: {
     label: "Urgent",
-    className: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/60",
+    className:
+      "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/60",
   },
   HIGH: {
     label: "High",
-    className: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60",
+    className:
+      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60",
   },
   MEDIUM: {
     label: "Medium",
-    className: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/60",
+    className:
+      "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/60",
   },
   LOW: {
     label: "Low",
-    className: "bg-zinc-50 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700",
+    className:
+      "bg-zinc-50 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700",
   },
 };
 
@@ -152,7 +156,8 @@ export default function TimeTrackingPage() {
     createTaskMutation.mutate({
       ...taskData,
       plannedDate: taskData.plannedDate || todayDate,
-      dayIndex: taskData.dayIndex !== undefined ? taskData.dayIndex : todayDayIndex,
+      dayIndex:
+        taskData.dayIndex !== undefined ? taskData.dayIndex : todayDayIndex,
     });
   };
 
@@ -166,7 +171,9 @@ export default function TimeTrackingPage() {
     }
   };
 
-  const handleTaskCompleted = useTimerStore((state) => state.handleTaskCompleted);
+  const handleTaskCompleted = useTimerStore(
+    (state) => state.handleTaskCompleted,
+  );
 
   const handleToggleStatus = (task: Task) => {
     const nextStatus: Record<TaskStatus, TaskStatus> = {
@@ -179,15 +186,18 @@ export default function TimeTrackingPage() {
     const taskId = task.id || task._id || "";
 
     if (newStatus === "DONE") {
-      handleTaskCompleted(taskId, (tId, totalHours) => {
-        updateTaskMutation.mutate({
-          ...task,
-          status: "DONE",
-          actualHours: totalHours,
-          loggedHours: totalHours,
+      const activeTaskId = useTimerStore.getState().activeTaskId;
+      if (activeTaskId === taskId) {
+        handleTaskCompleted(taskId, (_tId, totalHours) => {
+          updateTaskMutation.mutate({
+            ...task,
+            status: "DONE",
+            actualHours: totalHours,
+            loggedHours: totalHours,
+          });
         });
-      });
-      return;
+        return;
+      }
     }
 
     updateTaskMutation.mutate({
@@ -208,7 +218,9 @@ export default function TimeTrackingPage() {
 
   const handleSubmitLog = (loggedHours: number) => {
     if (!selectedTask) return;
-    const currentLogged = Number(selectedTask.loggedHours || selectedTask.actualHours || 0);
+    const currentLogged = Number(
+      selectedTask.loggedHours || selectedTask.actualHours || 0,
+    );
     const newTotal = parseFloat((currentLogged + loggedHours).toFixed(2));
     updateTaskMutation.mutate({
       ...selectedTask,
@@ -244,7 +256,10 @@ export default function TimeTrackingPage() {
     return tasks.filter((t) => t.status === "TODO" || !t.status).length;
   }, [tasks]);
 
-  const remainingHours = Math.max(0, TARGET_CAPACITY_PER_DAY - totalLoggedHours);
+  const remainingHours = Math.max(
+    0,
+    TARGET_CAPACITY_PER_DAY - totalLoggedHours,
+  );
   const completionPercentage = tasks.length
     ? Math.round((completedCount / tasks.length) * 100)
     : 0;
@@ -270,7 +285,9 @@ export default function TimeTrackingPage() {
         const matchesCode = task.code?.toLowerCase().includes(q);
         const matchesCategory = task.category?.toLowerCase().includes(q);
         const matchesDescription = task.description?.toLowerCase().includes(q);
-        return matchesTitle || matchesCode || matchesCategory || matchesDescription;
+        return (
+          matchesTitle || matchesCode || matchesCategory || matchesDescription
+        );
       }
 
       return true;
@@ -351,7 +368,9 @@ export default function TimeTrackingPage() {
                 className="h-full bg-blue-600 dark:bg-blue-500 transition-all duration-300"
                 style={{
                   width: `${Math.min(
-                    Math.round((totalLoggedHours / TARGET_CAPACITY_PER_DAY) * 100),
+                    Math.round(
+                      (totalLoggedHours / TARGET_CAPACITY_PER_DAY) * 100,
+                    ),
                     100,
                   )}%`,
                 }}
@@ -429,7 +448,11 @@ export default function TimeTrackingPage() {
             {(
               [
                 { key: "ALL", label: "All", count: tasks.length },
-                { key: "IN_PROGRESS", label: "In Progress", count: inProgressCount },
+                {
+                  key: "IN_PROGRESS",
+                  label: "In Progress",
+                  count: inProgressCount,
+                },
                 { key: "TODO", label: "To Do", count: todoCount },
                 { key: "DONE", label: "Completed", count: completedCount },
               ] as { key: StatusFilter; label: string; count: number }[]
@@ -480,7 +503,9 @@ export default function TimeTrackingPage() {
               Failed to load today&apos;s tasks
             </h3>
             <p className="text-xs text-red-700 dark:text-red-400 mt-1 max-w-sm">
-              {error instanceof Error ? error.message : "An unexpected error occurred."}
+              {error instanceof Error
+                ? error.message
+                : "An unexpected error occurred."}
             </p>
             <button
               type="button"
@@ -521,12 +546,14 @@ export default function TimeTrackingPage() {
             {filteredTasks.map((task) => {
               const taskId = task.id || task._id || "";
               const priority =
-                PRIORITY_STYLES[task.priority as string] || PRIORITY_STYLES.MEDIUM;
+                PRIORITY_STYLES[task.priority as string] ||
+                PRIORITY_STYLES.MEDIUM;
               const est = Number(task.estimatedHours ?? task.hours ?? 0);
               const act = Number(task.loggedHours ?? task.actualHours ?? 0);
               const isDone = task.status === "DONE";
               const isInProgress = task.status === "IN_PROGRESS";
-              const taskProgressPercent = est > 0 ? Math.min(Math.round((act / est) * 100), 100) : 0;
+              const taskProgressPercent =
+                est > 0 ? Math.min(Math.round((act / est) * 100), 100) : 0;
 
               return (
                 <div
@@ -543,11 +570,7 @@ export default function TimeTrackingPage() {
                       type="button"
                       onClick={() => handleToggleStatus(task)}
                       title={`Click to mark ${
-                        isDone
-                          ? "TODO"
-                          : isInProgress
-                            ? "DONE"
-                            : "IN PROGRESS"
+                        isDone ? "TODO" : isInProgress ? "DONE" : "IN PROGRESS"
                       }`}
                       className="mt-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 transition-colors cursor-pointer shrink-0"
                     >

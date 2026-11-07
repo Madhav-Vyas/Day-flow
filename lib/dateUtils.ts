@@ -81,6 +81,29 @@ export function getDaysInWeek(date: DateInput = new Date()): Date[] {
 }
 
 /**
+ * Returns the ISO week number of the year (1 - 53).
+ */
+export function getWeekNumber(date?: DateInput): number {
+  return toSafeDayjs(date).isoWeek();
+}
+
+/**
+ * Returns the formatted sprint label for a given date or week.
+ * Example: "Sprint 43"
+ */
+export function getSprintName(date?: DateInput): string {
+  return `Sprint ${getWeekNumber(date)}`;
+}
+
+/**
+ * Returns the sprint day number (1 for Monday, ..., 5 for Friday).
+ */
+export function getSprintDayNumber(date?: DateInput): number {
+  const weekday = toSafeDayjs(date).isoWeekday(); // 1 = Mon, ..., 7 = Sun
+  return Math.min(5, Math.max(1, weekday));
+}
+
+/**
  * Checks if two dates fall on the same calendar day.
  */
 export function isSameDay(dateA: DateInput, dateB: DateInput): boolean {

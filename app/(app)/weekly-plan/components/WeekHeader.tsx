@@ -12,6 +12,7 @@ interface WeekHeaderProps {
   targetSprintHours: number;
   sprintPercentage: number;
   sprintBuffer: number;
+  sprintLabel?: string;
   isCurrentWeek?: boolean;
   onDuplicateLastWeek: () => void;
   onOpenNewTask: () => void;
@@ -25,6 +26,7 @@ export function WeekHeader({
   targetSprintHours,
   sprintPercentage,
   sprintBuffer,
+  sprintLabel = "Sprint",
   isCurrentWeek = false,
   onDuplicateLastWeek,
   onOpenNewTask,
@@ -70,7 +72,7 @@ export function WeekHeader({
         <div className="flex items-center gap-2">
           <Timer className="h-4 w-4 text-slate-500 dark:text-zinc-400" />
           <span className="text-xs font-medium text-slate-700 dark:text-zinc-300">
-            Sprint 24:{" "}
+            {sprintLabel}:{" "}
             <span className="font-semibold text-slate-900 dark:text-zinc-100">
               {totalPlannedHours.toFixed(1)}h / {targetSprintHours.toFixed(1)}h
             </span>

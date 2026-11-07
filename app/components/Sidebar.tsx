@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGrid, Timer, SlidersHorizontal } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import { getSprintName, getSprintDayNumber } from "@/lib/dateUtils";
 
 // Custom icons to match the exact design in the reference
 function WeeklyPlanIcon({ className }: { className?: string }) {
@@ -97,6 +98,8 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const currentSprint = getSprintName();
+  const currentDay = getSprintDayNumber();
 
   return (
     <aside className="w-64 shrink-0 h-screen sticky top-0 flex flex-col justify-between border-r border-zinc-200/80 bg-white px-4 py-5 font-sans dark:border-zinc-800 dark:bg-zinc-950 transition-colors">
@@ -127,7 +130,7 @@ export default function Sidebar() {
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               <span className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
-                Sprint 24 · Day 3
+                {currentSprint} · Day {currentDay}
               </span>
             </div>
           </div>
